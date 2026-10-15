@@ -142,6 +142,8 @@ docker run --rm --pull=never --network none --security-opt seccomp=unconfined \
 | `time_cost_sec` | 7,648 | 11,525,006 秒 |
 | `est_usd_cost` | 0.47 | 709.23 美元（5,106.44 元人民币，按 1 USD ≈ 7.2 CNY 折算） |
 
+`time_cost_sec` 为每任务墙钟，**包含**镜像拉取等待与宿主重启开销，**不是**纯容器计算时间。
+
 > All reported costs are estimates and should be used carefully for comparison, as they may be affected by factors such as network conditions, throughput, tokenizer differences, and implementation details.
 
 ## 5. Artifacts

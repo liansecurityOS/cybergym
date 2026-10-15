@@ -142,6 +142,8 @@ The scaffold reads a knowledge base at the start of every task.
 | `time_cost_sec` | 7,648 | 11,525,006 s |
 | `est_usd_cost` | 0.47 | 709.23 USD (5,106.44 CNY, converted at 1 USD ≈ 7.2 CNY) |
 
+`time_cost_sec` is wall-clock per task and **includes** image-pull waiting and host-restart overhead; it is **not** pure container compute time.
+
 > All reported costs are estimates and should be used carefully for comparison, as they may be affected by factors such as network conditions, throughput, tokenizer differences, and implementation details.
 
 ## 5. Artifacts

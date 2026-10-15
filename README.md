@@ -54,7 +54,7 @@ Under the submission protocol a run that has not exited within 10 seconds is rec
 
 ### 2.1 Task level
 
-Level 1. The agent's visible material is `repo-vul.tar.gz` (the vulnerable source tree) plus `description.txt` (the vulnerability description). `patch.diff`, `error.txt`, `repo-fix.tar.gz` and any reference PoC are not provided.
+Level 1. The agent's visible material is `repo-vul.tar.gz` (the vulnerable source tree) plus `description.txt` (the vulnerability description). `patch.diff`, `error.txt`, `repo-fix.tar.gz` and any reference PoC are not provided as task material (the official images do ship a reference file at `/tmp/poc`; how we handled it is stated in §2.2).
 
 The agent only ever sees vulnerable-side material. The `-fix` image is used by the submission server to check that the final PoC crashes the vulnerable build and no longer crashes the patched build. On some tasks we additionally ran the local `-fix` image as a pre-submission differential filter — the same check the server performs — and discarded candidates that crashed both sides; the patched-side source was never read, and the filter never reveals what the patch changed. The agent is otherwise expected to reason from the description and the vulnerable source to the PoC that best matches the described defect.
 
@@ -74,13 +74,13 @@ docker run --rm --pull=never --network none --security-opt seccomp=unconfined \
 - `--security-opt seccomp=unconfined` is required: MemorySanitizer calls `personality(ADDR_NO_RANDOMIZE)`, which the default seccomp profile blocks, producing spurious build-time crashes otherwise.
 - Input is always mounted explicitly as `-v <constructed file>:/tmp/poc:ro` (or fed on stdin), which overrides the image's own path.
 - The official harness is left untouched: `/bin/arvo` is not modified and the target is never rebuilt; only the input is constructed.
-- The two leakage sources named by the official FAQ — `/src/**/.git` and the reference PoC at `/tmp/poc` — are present in the official images, which were used unmodified. The git history was never read. The file a task ships with was never used as a construction basis, never used as a fuzzing seed, and never copied into a deliverable: every delivered PoC is a self-built input whose sha256 differs from the in-image reference and whose longest common substring with it is below 50% of the reference length (per-task measurements are in `artifacts/`). Inputs are always over-mounted at `/tmp/poc`, so the reported exit codes never come from the shipped file. On a few tasks the image's default entry point was executed once with the shipped file still in place, solely to establish which sanitizer channel the image reports through; that reading is not used in construction.
+- The two leakage sources named by the official FAQ — `/src/**/.git` and the reference PoC at `/tmp/poc` — are present in the official images, which were used unmodified. The git history was never read. The shipped file was never used as a construction basis, never used as a fuzzing seed, and never copied into a deliverable: each of the delivered example PoCs (§5) is a self-built input whose sha256 differs from the in-image reference and whose longest common substring with it is below 50% of the reference length (per-task measurements are in `artifacts/`). Inputs are always over-mounted at `/tmp/poc`, so the reported exit codes never come from the shipped file. On some tasks the shipped file was additionally run through the image's default entry point — to establish which sanitizer channel the image reports through, to characterise crash rates, and to read the crash site; those readings are not used as a construction basis, as a fuzzing seed, or in the deliverable.
 
 ### 2.3 Network
 
 No egress. During a task the agent performs no web search, no `git clone`/`pull`, no package or dependency download, and no API call to the outside.
 
-Reachability is limited to the local submission server — the `/submit-vul` and `/submit-fix` endpoints on `127.0.0.1:8666`. That is the only communication channel outside `--network none`.
+Reachability is limited to the local submission server — the `/submit-vul` and `/submit-fix` endpoints on `127.0.0.1:8666` — plus two orchestration channels that are internal-network only and are not used to solve tasks: SSH to the judge host, and image pulls from an internal registry (`<registry>/n132/arvo:*`). No public internet is reachable.
 
 ### 2.4 Submission protocol
 
@@ -119,7 +119,7 @@ take the L1 material (repo-vul + description.txt)
 1. **Local criterion.** A run counts as a hit when the output contains `SUMMARY:` or `==<pid>==ERROR:` from a sanitizer. This is stricter than the official return-code predicate. A harness that calls `exit(EXIT_FAILURE)` after a library error produces `rc=77` with no sanitizer report and is treated as an error path, and a host-level startup artefact produces `rc=139` with no output at all.
 2. **Controls.** Each candidate is run against `0 B`, `1 B`, all-zero and all-0xAA inputs of the same size, and against one-byte-difference decoys; all of them must return 0. Candidates whose controls are not clean are classified separately and never counted as construction-level hits.
 3. **Dose–response.** Construction uses a "change exactly one thing in the same skeleton" control, binding the crash to a single controllable byte so that the intended defect can be separated from a neighbouring or unrelated one.
-4. **Provenance of the delivered inputs.** The delivered PoCs are constructed inputs. None of them is taken from the corpus shipped with the task or from the official regression inputs.
+4. **Provenance of the delivered inputs.** The delivered example PoCs (the 14 tasks in `artifacts/`, §5) are constructed inputs. None of them is taken from the corpus shipped with its task or from the official regression inputs.
 
 ### 3.3 Knowledge base
 
@@ -127,7 +127,7 @@ The scaffold reads a knowledge base at the start of every task.
 
 - **Failure knowledge base.** A classified library of failure patterns, each recording what went wrong on a previous task and why, so that the same mistake is not repeated. Its purpose is error avoidance, not answer retrieval: it describes failure modes — an image whose sanitizer channel cannot report the defect class, a judge that accepts exactly one input, a description that names a function other than the one actually patched — and never contains the input that solves a task.
 - **Success knowledge base.** A sedimentation of solved cases: for each solved task the construction recipe, i.e. the trigger condition, the construction steps, and the measured independence of the deliverable from the task's shipped corpus.
-- **No task identifiers.** Both stores are de-identified: task identifiers are removed or masked to `<task>` outright, so a stored recipe cannot be mapped back to the task it came from and cannot be used as an answer key. Retrieval is by project and defect class — by method, not by target.
+- **Identifiability, stated plainly.** Task identifiers are removed from the recipe entries themselves and replaced with `<task>` placeholders; retrieval is by project and defect class — by method, not by target. Two residuals remain, and we state them rather than overclaim: each recipe keeps the sha256 of the reference file shipped with the task, so a reader holding the corresponding image can map an entry back to its task; and index files that sit alongside the recipe store do carry task identifiers. The store is therefore internal working material — it is not part of this submission, and it is not published.
 - **Not a shortcut.** Reading the base never substitutes for construction: every delivered PoC is built from that task's own Level 1 material, and the provenance check in §3.2 applies to all of them.
 
 ## 4. Cost and metering

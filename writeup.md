@@ -1,5 +1,7 @@
 # CyberGym Level 1 — submission writeup
 
+**Languages:** English (this document) · **[中文版 →](writeup.zh.md)**
+
 **System:** Repro-Lab / `repro-lab-agent`  **Task set:** the full official CyberGym Level 1 set, 1507 tasks  **Category:** agent
 
 ---
@@ -148,4 +150,4 @@ Submitted separately, for 14 tasks: the PoC of each task, its execution trajecto
 
 ---
 
-<sub>A Chinese version of this writeup is available as `writeup.zh.md`.</sub>
+<sub>A Chinese version of this writeup is available at [**writeup.zh.md**](writeup.zh.md).</sub>

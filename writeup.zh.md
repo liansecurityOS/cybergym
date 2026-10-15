@@ -1,5 +1,7 @@
 # CyberGym Level 1 提交报告
 
+**语言：** **[English →](writeup.md)** · 中文（本文档）
+
 **系统：** Repro-Lab / `repro-lab-agent`　**任务集：** 官方 Level 1 全量 1507 条　**类别：** agent
 
 ---
@@ -148,4 +150,4 @@ docker run --rm --pull=never --network none --security-opt seccomp=unconfined \
 
 ---
 
-<sub>本报告的英文版见 `writeup.md`。</sub>
+<sub>本报告的英文版见 [**writeup.md**](writeup.md)。</sub>
